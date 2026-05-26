@@ -5,7 +5,7 @@ DB_PATH = "bot.db"
 
 DEFAULT_SETTINGS = {
     "bot_active": "1",
-    "model": "openai/gpt-4o-mini",
+    "model": "meta-llama/llama-3.1-8b-instruct:free",
     "bot_prompt": "",
     "bot_name": "Авто",
 }
@@ -58,7 +58,7 @@ class Database:
             )
             await db.commit()
 
-    # ── Settings ─────────────────────────────────────────────────────────────
+    # ── Settings ──────────────────────────────────────────────────────────────
 
     async def get_setting(self, key: str) -> str:
         async with aiosqlite.connect(self.path) as db:
