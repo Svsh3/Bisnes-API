@@ -24,8 +24,10 @@ def is_owner(user_id: int) -> bool:
 
 # ── /start ────────────────────────────────────────────────────────────────────
 
-@router.message(F.chat.type == "private", F.from_user.id == Config.OWNER_ID, F.text == "/start")
+@router.message(F.chat.type == "private", F.text == "/start")
 async def cmd_start(message: Message):
+    if message.from_user.id != Config.OWNER_ID:
+        return
     settings = await db.get_all_settings()
     bot_active = settings.get("bot_active", "1") == "1"
     _, status_active = await db.get_status()
@@ -37,9 +39,10 @@ async def cmd_start(message: Message):
         parse_mode="HTML",
     )
 
-# ── Обновление last_seen при любом сообщении от владельца ────────────────────
 
-@router.message(F.from_user.id == Config.OWNER_ID)
+# ── Обновление last_seen + FSM при любом сообщении от владельца ──────────────
+
+@router.message(F.from_user.id == Config.OWNER_ID, F.text != "/start")
 async def owner_activity(message: Message, state: FSMContext):
     await db.update_owner_seen()
 
