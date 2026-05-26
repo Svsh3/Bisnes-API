@@ -8,7 +8,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import Config
 from database import Database
-from handlers import owner, business
+from handlers import business, owner
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 async def main():
-    Config.validate()  # Сразу упадёт с понятной ошибкой если нет токенов
+    Config.validate()
 
     db = Database()
     await db.init()
@@ -30,11 +30,19 @@ async def main():
     )
     dp = Dispatcher(storage=MemoryStorage())
 
+    dp.include_router(business.router)  # ← business ПЕРВЫМ
     dp.include_router(owner.router)
-    dp.include_router(business.router)
 
     log.info("🚀 Бот запущен. Владелец ID: %s", Config.OWNER_ID)
-    await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+    await dp.start_polling(
+        bot,
+        allowed_updates=[
+            "message",
+            "callback_query",
+            "business_connection",
+            "business_message",  # ← явно разрешаем business апдейты
+        ]
+    )
 
 
 if __name__ == "__main__":
