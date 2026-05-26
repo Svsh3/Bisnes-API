@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -10,6 +11,7 @@ from services.ai import AVAILABLE_MODELS
 
 router = Router()
 db = Database()
+log = logging.getLogger(__name__)
 
 
 class SettingsFSM(StatesGroup):
@@ -26,7 +28,9 @@ def is_owner(user_id: int) -> bool:
 
 @router.message(F.chat.type == "private", F.text == "/start")
 async def cmd_start(message: Message):
+    log.info("📌 /start от user_id=%s (owner=%s)", message.from_user.id, Config.OWNER_ID)
     if message.from_user.id != Config.OWNER_ID:
+        log.info("⛔ Не владелец — игнорируем /start")
         return
     settings = await db.get_all_settings()
     bot_active = settings.get("bot_active", "1") == "1"
@@ -38,16 +42,17 @@ async def cmd_start(message: Message):
         reply_markup=main_menu(bot_active, status_active),
         parse_mode="HTML",
     )
+    log.info("✅ Панель управления отправлена")
 
 
-# ── Обновление last_seen + FSM при любом сообщении от владельца ──────────────
+# ── Обновление last_seen + FSM ────────────────────────────────────────────────
 
 @router.message(F.from_user.id == Config.OWNER_ID, F.text != "/start")
 async def owner_activity(message: Message, state: FSMContext):
     await db.update_owner_seen()
+    log.info("👤 Владелец написал: %r — last_seen обновлён", (message.text or "")[:30])
 
     current_state = await state.get_state()
-
     if current_state == SettingsFSM.waiting_status:
         await handle_status_input(message, state)
     elif current_state == SettingsFSM.waiting_prompt:
