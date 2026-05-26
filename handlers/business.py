@@ -1,5 +1,6 @@
 import asyncio
-from datetime import datetime, timezone
+import logging
+from datetime import datetime
 
 from aiogram import Router, F, Bot
 from aiogram.types import Message
@@ -10,68 +11,86 @@ from services.ai import ask_ai, build_system_prompt
 
 router = Router()
 db = Database()
+log = logging.getLogger(__name__)
 
-# Кэш "уже ответили в этот раз офлайна" чтобы не спамить
 _answered_cache: dict[int, float] = {}
-_COOLDOWN = 60  # секунд между авто-ответами одному юзеру
-
-
-def _is_offline() -> bool:
-    """Проверяем через asyncio — вызывается из sync-контекста"""
-    return True  # Заглушка, реальная логика — async ниже
+_COOLDOWN = 60
 
 
 async def is_owner_offline() -> bool:
     last_seen = await db.get_owner_last_seen()
-    now = datetime.now()
-    diff = (now - last_seen).total_seconds()
+    diff = (datetime.now() - last_seen).total_seconds()
+    log.info("⏱ Офлайн проверка: last_seen=%s, diff=%.1f сек, порог=%s",
+             last_seen, diff, Config.OFFLINE_THRESHOLD)
     return diff > Config.OFFLINE_THRESHOLD
 
 
 async def should_respond(chat_id: int) -> bool:
     last = _answered_cache.get(chat_id, 0)
-    now = datetime.now().timestamp()
-    return (now - last) > _COOLDOWN
+    diff = datetime.now().timestamp() - last
+    log.info("⏳ Cooldown проверка chat_id=%s: %.1f сек прошло (cooldown=%s)", chat_id, diff, _COOLDOWN)
+    return diff > _COOLDOWN
 
 
-# ── Business incoming message ─────────────────────────────────────────────────
+# ── Лог ВСЕХ входящих апдейтов для диагностики ───────────────────────────────
 
-@router.message(F.business_connection_id.is_not(None))
-async def handle_business_message(message: Message, bot: Bot):
-    # Игнорируем собственные сообщения владельца
+@router.message()
+async def debug_all(message: Message, bot: Bot):
+    log.info(
+        "📨 Сообщение: from_id=%s | chat_id=%s | business_id=%s | text=%r",
+        message.from_user.id if message.from_user else "None",
+        message.chat.id,
+        message.business_connection_id,
+        (message.text or "")[:50],
+    )
+
+    # Сообщение от владельца — обновляем last_seen и выходим
     if message.from_user and message.from_user.id == Config.OWNER_ID:
         await db.update_owner_seen()
+        log.info("✅ Владелец активен — last_seen обновлён")
+        return
+
+    # Не business — игнорируем
+    if not message.business_connection_id:
+        log.info("⛔ Нет business_connection_id — пропускаем")
         return
 
     # Проверяем активность бота
     bot_active = await db.get_setting("bot_active")
+    log.info("🔘 bot_active=%s", bot_active)
     if bot_active != "1":
+        log.info("⛔ Бот выключен")
         return
 
     # Проверяем офлайн
     offline = await is_owner_offline()
     if not offline:
+        log.info("⛔ Владелец онлайн — не отвечаем")
         return
 
     # Cooldown
     chat_id = message.chat.id
     if not await should_respond(chat_id):
+        log.info("⛔ Cooldown ещё не прошёл")
         return
 
     text = message.text or message.caption or ""
     if not text:
+        log.info("⛔ Пустое сообщение")
         return
 
-    # Сохраняем входящее в историю
+    log.info("🤖 Запускаем AI ответ для chat_id=%s", chat_id)
+
     sender_name = message.from_user.first_name if message.from_user else "Собеседник"
     await db.add_message(chat_id, "user", f"{sender_name}: {text}")
 
-    # Подгружаем историю и настройки
     history = await db.get_history(chat_id, limit=20)
     settings = await db.get_all_settings()
     status_msg, status_active = await db.get_status()
-    model = settings.get("model", "openai/gpt-4o-mini")
+    model = settings.get("model", "meta-llama/llama-3.1-8b-instruct:free")
     system = build_system_prompt(settings)
+
+    log.info("📡 Используем модель: %s", model)
 
     try:
         await bot.send_chat_action(
@@ -89,16 +108,17 @@ async def handle_business_message(message: Message, bot: Bot):
             status_active=status_active,
             user_message=text,
         )
+        log.info("✅ AI ответил: %r", reply[:80])
     except Exception as e:
-        reply = f"Хозяин недоступен, попробуй позже. (ошибка: {e})"
+        log.error("❌ Ошибка AI: %s", e)
+        reply = f"Хозяин недоступен, попробуй позже."
 
-    # Отправляем через Business API
     await bot.send_message(
         chat_id=chat_id,
         text=reply,
         business_connection_id=message.business_connection_id,
     )
 
-    # Сохраняем ответ в историю
     await db.add_message(chat_id, "assistant", reply)
     _answered_cache[chat_id] = datetime.now().timestamp()
+    log.info("📤 Ответ отправлен в chat_id=%s", chat_id)
