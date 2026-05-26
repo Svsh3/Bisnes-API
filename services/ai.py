@@ -2,23 +2,20 @@ import httpx
 from config import Config
 
 AVAILABLE_MODELS = [
-    ("openai/gpt-4o-mini", "GPT-4o Mini 💨"),
-    ("openai/gpt-4o", "GPT-4o 🧠"),
-    ("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku ⚡"),
-    ("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet 🎯"),
-    ("google/gemini-flash-1.5", "Gemini Flash 1.5 🌟"),
-    ("google/gemini-pro-1.5", "Gemini Pro 1.5 🔥"),
-    ("meta-llama/llama-3.1-8b-instruct:free", "Llama 3.1 8B (Free) 🆓"),
-    ("deepseek/deepseek-chat", "DeepSeek Chat 🔍"),
-    ("mistralai/mixtral-8x7b-instruct", "Mixtral 8x7B ⚙️"),
+    ("meta-llama/llama-3.1-8b-instruct:free", "Llama 3.1 8B 🆓"),
+    ("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B 🆓"),
+    ("mistralai/mistral-7b-instruct:free", "Mistral 7B 🆓"),
+    ("google/gemma-3-27b-it:free", "Gemma 3 27B 🆓"),
+    ("deepseek/deepseek-r1:free", "DeepSeek R1 🆓"),
+    ("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 🆓"),
+    ("microsoft/phi-4-reasoning:free", "Phi-4 Reasoning 🆓"),
+    ("qwen/qwen3-14b:free", "Qwen3 14B 🆓"),
+    ("openai/gpt-4o-mini", "GPT-4o Mini 💰"),
+    ("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku 💰"),
 ]
 
 
 async def search_web(query: str) -> str:
-    """
-    Простой поиск через DuckDuckGo Instant Answer API (бесплатно, без ключа).
-    Для более глубокого поиска можно заменить на SerpAPI / Tavily.
-    """
     url = "https://api.duckduckgo.com/"
     params = {"q": query, "format": "json", "no_html": "1", "skip_disambig": "1"}
     try:
@@ -41,10 +38,6 @@ async def ask_ai(
     status_active: bool = False,
     user_message: str = "",
 ) -> str:
-    """
-    Отправляет запрос в OpenRouter.
-    Автоматически решает — нужен ли веб-поиск.
-    """
     search_result = ""
     needs_search = any(
         kw in user_message.lower()
@@ -69,13 +62,13 @@ async def ask_ai(
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": full_system}] + messages,
-        "max_tokens": 1500,
+        "max_tokens": 1024,
         "temperature": 0.85,
     }
 
     headers = {
         "Authorization": f"Bearer {Config.OPENROUTER_API_KEY}",
-        "HTTP-Referer": "https://t.me/your_bot",
+        "HTTP-Referer": "https://t.me/aura456bot",
         "X-Title": "TG Business AutoResponder",
         "Content-Type": "application/json",
     }
