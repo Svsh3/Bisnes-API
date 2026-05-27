@@ -4,16 +4,8 @@ import httpx
 from config import Config
 
 AVAILABLE_MODELS = [
-    ("meta-llama/llama-3.1-8b-instruct:free", "Llama 3.1 8B 🆓"),
-    ("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B 🆓"),
-    ("mistralai/mistral-7b-instruct:free", "Mistral 7B 🆓"),
-    ("google/gemma-3-27b-it:free", "Gemma 3 27B 🆓"),
-    ("deepseek/deepseek-r1:free", "DeepSeek R1 🆓"),
-    ("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 🆓"),
-    ("microsoft/phi-4-reasoning:free", "Phi-4 Reasoning 🆓"),
-    ("qwen/qwen3-14b:free", "Qwen3 14B 🆓"),
-    ("openai/gpt-4o-mini", "GPT-4o Mini 💰"),
-    ("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku 💰"),
+   ("nvidia/nemotron-3-super-120b-a12b:free", "Nemotron 3 120B 🆓"),
+    ("google/gemini-3.5-flash", "gemini 3.5"),
 ]
 
 
