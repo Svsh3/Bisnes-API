@@ -2,8 +2,8 @@ import asyncio
 import logging
 from datetime import datetime
 
-from aiogram import Router, F, Bot
-from aiogram.types import Message
+from aiogram import Router, Bot
+from aiogram.types import Message, BusinessConnection
 
 from config import Config
 from database import Database
@@ -32,10 +32,9 @@ async def should_respond(chat_id: int) -> bool:
     return diff > _COOLDOWN
 
 
-# ── Лог ВСЕХ входящих апдейтов для диагностики ───────────────────────────────
+# ── Общая логика ответа на сообщение ──────────────────────────────────────────
 
-@router.message()
-async def debug_all(message: Message, bot: Bot):
+async def _handle_message(message: Message, bot: Bot):
     log.info(
         "📨 Сообщение: from_id=%s | chat_id=%s | business_id=%s | text=%r",
         message.from_user.id if message.from_user else "None",
@@ -120,3 +119,28 @@ async def debug_all(message: Message, bot: Bot):
     await db.add_message(chat_id, "assistant", reply)
     _answered_cache[chat_id] = datetime.now().timestamp()
     log.info("📤 Ответ отправлен в chat_id=%s", chat_id)
+
+
+# ── Обычные сообщения (в ЛС боту) ─────────────────────────────────────────────
+
+@router.message()
+async def on_regular_message(message: Message, bot: Bot):
+    await _handle_message(message, bot)
+
+
+# ── Business-сообщения (когда пишут владельцу в личку) ────────────────────────
+
+@router.business_message()
+async def on_business_message(message: Message, bot: Bot):
+    await _handle_message(message, bot)
+
+
+# ── Подключение/отключение Business ────────────────────────────────────────────
+
+@router.business_connection()
+async def on_business_connection(connection: BusinessConnection, bot: Bot):
+    if connection.user.id == Config.OWNER_ID:
+        log.info("🔗 Business-подключение: id=%s, can_reply=%s",
+                 connection.id, connection.can_reply)
+        if not connection.can_reply:
+            log.warning("⚠️ Бот не может отвечать — нет прав can_reply")
