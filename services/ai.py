@@ -4,7 +4,7 @@ from config import Config
 AVAILABLE_MODELS = [
     ("nvidia/nemotron-3-super-120b-a12b:free", "Nemotron 3 120B 🆓"),
     ("mistralai/mistral-7b-instruct:free", "Mistral 7B 🆓"),
-    ("google/gemma-3-27b-it:free", "Gemma 3 27B 🆓"),
+    ("google/gemma-4-31b-it:free", "gemma"),
     ("deepseek/deepseek-r1:free", "DeepSeek R1 🆓"),
     ("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 🆓"),
     ("microsoft/phi-4-reasoning:free", "Phi-4 Reasoning 🆓"),
