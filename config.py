@@ -14,7 +14,7 @@ class Config:
     OWNER_ID: int = int(os.environ.get("OWNER_ID", "0"))
     OPENROUTER_API_KEY: str = os.environ.get("OPENROUTER_API_KEY", "")
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    OFFLINE_THRESHOLD: int = int(os.environ.get("OFFLINE_THRESHOLD", "30"))  # секунд
+    OFFLINE_THRESHOLD: int = int(os.environ.get("OFFLINE_THRESHOLD", "60"))  # секунд
 
     @classmethod
     def validate(cls):
