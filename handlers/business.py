@@ -50,9 +50,9 @@ async def debug_all(message: Message, bot: Bot):
         log.info("✅ Владелец активен — last_seen обновлён")
         return
 
-    # Не business — игнорируем
-    if not message.business_connection_id:
-        log.info("⛔ Нет business_connection_id — пропускаем")
+    # Не business и не private — игнорируем
+    if not message.business_connection_id and message.chat.type != "private":
+        log.info("⛔ Не business и не private — пропускаем")
         return
 
     # Проверяем активность бота
@@ -93,11 +93,10 @@ async def debug_all(message: Message, bot: Bot):
     log.info("📡 Используем модель: %s", model)
 
     try:
-        await bot.send_chat_action(
-            chat_id=chat_id,
-            action="typing",
-            business_connection_id=message.business_connection_id,
-        )
+        action_kwargs = {"chat_id": chat_id, "action": "typing"}
+        if message.business_connection_id:
+            action_kwargs["business_connection_id"] = message.business_connection_id
+        await bot.send_chat_action(**action_kwargs)
         await asyncio.sleep(1.2)
 
         reply = await ask_ai(
@@ -113,11 +112,10 @@ async def debug_all(message: Message, bot: Bot):
         log.error("❌ Ошибка AI: %s", e)
         reply = f"Хозяин недоступен, попробуй позже."
 
-    await bot.send_message(
-        chat_id=chat_id,
-        text=reply,
-        business_connection_id=message.business_connection_id,
-    )
+    send_kwargs = {"chat_id": chat_id, "text": reply}
+    if message.business_connection_id:
+        send_kwargs["business_connection_id"] = message.business_connection_id
+    await bot.send_message(**send_kwargs)
 
     await db.add_message(chat_id, "assistant", reply)
     _answered_cache[chat_id] = datetime.now().timestamp()
