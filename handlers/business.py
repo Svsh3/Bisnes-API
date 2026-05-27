@@ -14,7 +14,7 @@ db = Database()
 log = logging.getLogger(__name__)
 
 _answered_cache: dict[int, float] = {}
-_COOLDOWN = 60
+_COOLDOWN = 1
 
 
 async def is_owner_offline() -> bool:
