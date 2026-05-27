@@ -96,7 +96,7 @@ async def _handle_message(message: Message, bot: Bot):
         if message.business_connection_id:
             action_kwargs["business_connection_id"] = message.business_connection_id
         await bot.send_chat_action(**action_kwargs)
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(0.2)
 
         reply = await ask_ai(
             messages=history,
