@@ -9,6 +9,9 @@ AVAILABLE_MODELS = [
    ("openai/gpt-oss-120b:free", "GPT"),
    ("z-ai/glm-4.5-air:free", "Z-ai"),
    ("poolside/laguna-m.1:free", "Laguna"),
+   ("deepseek/deepseek-v4-flash:free", "Deepseek"),
+   ("moonshotai/kimi-k2.6:free", "Kimi"),
+   ("google/gemma-4-31b-it:free", "Gemini 4"),
 ]
 
 
