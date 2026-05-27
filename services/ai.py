@@ -6,6 +6,8 @@ from config import Config
 AVAILABLE_MODELS = [
    ("nvidia/nemotron-3-super-120b-a12b:free", "Nemotron 3 120B 🆓"),
     ("google/gemini-3.5-flash", "gemini 3.5"),
+   ("openai/gpt-oss-120b:free", "GPT"),
+   ("z-ai/glm-4.5-air:free", "Z-ai"),
 ]
 
 
@@ -62,7 +64,7 @@ async def ask_ai(
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": full_system}] + messages,
-        "max_tokens": 1024,
+        "max_tokens": 900,
         "temperature": 0.85,
     }
 
