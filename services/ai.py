@@ -62,7 +62,7 @@ async def ask_ai(
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": full_system}] + messages,
-        "max_tokens": 2048,
+        "max_tokens": 1024,
         "temperature": 0.85,
     }
 
