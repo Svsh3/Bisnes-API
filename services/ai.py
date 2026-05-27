@@ -8,6 +8,7 @@ AVAILABLE_MODELS = [
     ("google/gemini-3.5-flash", "gemini 3.5"),
    ("openai/gpt-oss-120b:free", "GPT"),
    ("z-ai/glm-4.5-air:free", "Z-ai"),
+   ("poolside/laguna-m.1:free", "Laguna"),
 ]
 
 
