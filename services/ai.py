@@ -1,14 +1,26 @@
+import re
+
 import httpx
 from config import Config
 
 AVAILABLE_MODELS = [
-    ("nvidia/nemotron-3-super-120b-a12b:free", "Nemotron 3 120B 🆓"),
+    ("meta-llama/llama-3.1-8b-instruct:free", "Llama 3.1 8B 🆓"),
+    ("meta-llama/llama-3.3-70b-instruct:free", "Llama 3.3 70B 🆓"),
     ("mistralai/mistral-7b-instruct:free", "Mistral 7B 🆓"),
-    ("google/gemma-4-31b-it:free", "gemma"),
+    ("google/gemma-3-27b-it:free", "Gemma 3 27B 🆓"),
     ("deepseek/deepseek-r1:free", "DeepSeek R1 🆓"),
     ("deepseek/deepseek-chat-v3-0324:free", "DeepSeek V3 🆓"),
     ("microsoft/phi-4-reasoning:free", "Phi-4 Reasoning 🆓"),
+    ("qwen/qwen3-14b:free", "Qwen3 14B 🆓"),
+    ("openai/gpt-4o-mini", "GPT-4o Mini 💰"),
+    ("anthropic/claude-3.5-haiku", "Claude 3.5 Haiku 💰"),
 ]
+
+
+def _strip_reasoning(text: str) -> str:
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    text = re.sub(r"<reasoning>.*?</reasoning>", "", text, flags=re.DOTALL)
+    return text.strip()
 
 
 async def search_web(query: str) -> str:
@@ -78,7 +90,8 @@ async def ask_ai(
         data = r.json()
 
     try:
-        return data["choices"][0]["message"]["content"].strip()
+        raw = data["choices"][0]["message"]["content"]
+        return _strip_reasoning(raw)
     except (KeyError, IndexError):
         error_info = data.get("error", {}).get("message", str(data))
         raise RuntimeError(f"OpenRouter error: {error_info}")
